@@ -3,3 +3,7 @@
 *.xcodeproj
 dist/
 landing/NotchApple.zip
+
+# Xcode per-user state (not shared)
+xcuserdata/
+*.xcuserstate

@@ -170,7 +170,7 @@ final class VideoAppleView: NSView {
     private let playerLayer = AVPlayerLayer()
 
     static func make(frame: NSRect) -> VideoAppleView? {
-        guard let url = Bundle.module.url(forResource: "golden_apple", withExtension: "mov") else {
+        guard let url = Bundle.resources.url(forResource: "golden_apple", withExtension: "mov") else {
             return nil
         }
         return VideoAppleView(frame: frame, url: url)

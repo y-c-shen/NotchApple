@@ -3,7 +3,7 @@ import CoreText
 
 enum MinecraftTheme {
     static func registerFont() {
-        guard let url = Bundle.module.url(forResource: "Monocraft", withExtension: "ttc") else { return }
+        guard let url = Bundle.resources.url(forResource: "Monocraft", withExtension: "ttc") else { return }
         CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
     }
 
@@ -14,7 +14,7 @@ enum MinecraftTheme {
     /// A real frame of the golden apple (not the flat pixel-art fallback),
     /// used wherever a static apple image is shown (e.g. the toast).
     static let appleStill: NSImage? = {
-        guard let url = Bundle.module.url(forResource: "apple_still", withExtension: "png") else { return nil }
+        guard let url = Bundle.resources.url(forResource: "apple_still", withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
     }()
 

@@ -7,3 +7,6 @@ landing/NotchApple.zip
 # Xcode per-user state (not shared)
 xcuserdata/
 *.xcuserstate
+
+# Xcode-generated Swift package metadata (auto-recreated by `open Package.swift`)
+.swiftpm/

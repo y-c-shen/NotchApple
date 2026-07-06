@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notch Apple — a golden apple in your Mac's notch</title>
+<style>
+@font-face {
+  font-family: 'Monocraft';
+  src: url('Monocraft.otf') format('opentype');
+  font-display: swap;
+}
+:root {
+  --bg: #0a0a0c;
+  --panel: #141418;
+  --panel-line: #26262e;
+  --text: #ececf1;
+  --muted: #8b8b98;
+  --gold: #ffcc33;
+  --gold-deep: #e0a316;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+.mono { font-family: 'Monocraft', monospace; }
+
+/* ---- notch header motif ---- */
+.topbar {
+  position: relative; height: 40px; display: flex; justify-content: center;
+  /* faint screen-bezel highlight so the black notch reads as a cut-out */
+  background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 70%);
+}
+.topbar .notch {
+  width: 182px; height: 30px; background: #000;
+  border-radius: 0 0 16px 16px;
+  border: 1px solid #33333d; border-top: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.9), 0 0 22px rgba(255,204,51,.10);
+  position: relative;
+}
+.topbar .notch::after { /* camera dot */
+  content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #4a5a6a, #05070a);
+  box-shadow: 0 0 4px rgba(120,160,210,.6);
+}
+
+/* ---- hero ---- */
+.hero { text-align: center; padding: 40px 0 72px; position: relative; }
+.hero::before {
+  content: ""; position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+  width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,190,60,.18), transparent 65%);
+  filter: blur(10px); z-index: 0;
+}
+.apple { position: relative; z-index: 1; width: 148px; height: 148px; display: block; }
+
+/* ---- interactive hero apple (hold to eat) ---- */
+.apple-wrap {
+  position: relative; z-index: 1; display: inline-block; cursor: pointer;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+.apple-wrap .apple { -webkit-user-drag: none; }
+.apple-wrap.eating .apple { animation: heroChew .32s infinite; }
+@keyframes heroChew { 0%,100%{transform:scale(1)} 25%{transform:scale(.9)} 60%{transform:scale(1.05)} }
+.apple-wrap.eaten .apple { animation: heroEaten .5s cubic-bezier(.5,-0.3,.7,.4) forwards; }
+@keyframes heroEaten { to { transform: scale(.15) rotate(24deg); opacity: 0; } }
+.apple-wrap.respawn .apple { animation: heroRespawn .5s cubic-bezier(.2,.9,.3,1.3); }
+@keyframes heroRespawn { from { transform: scale(.15); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.apple-ring {
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: 0; transition: opacity .18s ease;
+}
+.apple-wrap.eating .apple-ring { opacity: 1; }
+.apple-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.apple-ring circle {
+  fill: none; stroke: var(--gold); stroke-width: 4; stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(255,204,51,.7));
+}
+.apple-hint {
+  font-family: 'Monocraft', monospace; font-size: 12px; color: #7a7a86;
+  margin-top: 10px; position: relative; z-index: 1;
+  transition: color .2s ease; letter-spacing: .04em;
+}
+.apple-wrap.eating ~ .apple-hint { color: var(--gold); }
+
+/* screen-wide potion particles + golden flash fired on eat */
+.hero-flash {
+  position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: 0;
+  background: radial-gradient(circle at 50% 42%, rgba(255,210,80,.55), transparent 60%);
+}
+.hero-flash.go { animation: heroFlash .9s ease-out; }
+@keyframes heroFlash { 0%{opacity:1} 100%{opacity:0} }
+.hero-fx { position: fixed; inset: 0; pointer-events: none; z-index: 61; overflow: hidden; }
+.hero-fx .hp { position: absolute; bottom: -18px; width: 12px; height: 12px;
+  border-radius: 2px; image-rendering: pixelated; opacity: 0; }
+.hero-fx .hp.go { animation: heroRise linear forwards; }
+@keyframes heroRise {
+  0% { opacity: 1; }
+  100% { transform: translateY(-102vh) rotate(360deg); opacity: 0; }
+}
+
+.eyebrow {
+  font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+h1.title {
+  font-size: 40px; letter-spacing: .06em; color: #fff;
+  margin: 6px 0 18px; position: relative; z-index: 1;
+}
+.lede { font-size: 19px; color: var(--muted); max-width: 560px; margin: 0 auto 10px; }
+.lede b { color: var(--text); font-weight: 600; }
+.wordplay {
+  font-size: 14px; color: #6c6c78; max-width: 520px; margin: 18px auto 0; font-style: italic;
+}
+
+/* ---- buttons ---- */
+.cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 16px; font-weight: 600; text-decoration: none;
+  padding: 13px 26px; border-radius: 12px; cursor: pointer; border: 1px solid transparent;
+  transition: transform .12s ease, background .15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: linear-gradient(180deg, var(--gold), var(--gold-deep)); color: #241a00; }
+.btn-primary:hover { background: linear-gradient(180deg, #ffd964, var(--gold-deep)); }
+.btn-ghost { background: var(--panel); color: var(--text); border-color: var(--panel-line); }
+.btn-ghost:hover { border-color: #3a3a46; }
+.req { margin-top: 12px; font-size: 13px; color: #63636e; }
+
+/* ---- animated demo ---- */
+.mode-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 18px; }
+.mode-tab {
+  display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--panel-line);
+  padding: 8px 18px; border-radius: 999px; transition: all .25s ease; cursor: pointer;
+}
+.mode-tab:hover { color: var(--text); border-color: #3a3a46; }
+.mode-tab.active:hover { color: #241a00; }
+.mode-tab span { font-size: 15px; }
+.mode-tab.active {
+  color: #241a00; background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+  border-color: var(--gold); transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255,204,51,.28);
+}
+.demo-stage { display: flex; justify-content: center; margin-top: 8px; }
+.mac {
+  position: relative; width: 680px; max-width: 100%; height: 384px;
+  border-radius: 18px; overflow: hidden;
+  background: radial-gradient(120% 80% at 50% -10%, #1c2740, #0c0f16 60%);
+  border: 1px solid #23232b; box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+.mac .menubar {
+  position: absolute; top: 0; left: 0; right: 0; height: 24px;
+  background: rgba(255,255,255,.05); backdrop-filter: blur(6px);
+  display: flex; align-items: center; gap: 16px; padding: 0 14px;
+  font-size: 11px; color: #c9c9d2;
+}
+.mac .menubar .dot { width: 12px; height: 12px; }
+.mac .menubar .spacer { flex: 1; }
+/* the notch / tray */
+.tray {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 168px; height: 26px; background: #000;
+  border-radius: 0 0 16px 16px; overflow: hidden;
+  transition: width .32s cubic-bezier(.2,.8,.2,1), height .32s cubic-bezier(.2,.8,.2,1);
+  z-index: 5;
+}
+.tray.open { width: 322px; height: 232px; background: #0e0b08 url('dirt_dark.png');
+  background-size: 56px; image-rendering: pixelated; box-shadow: 0 12px 30px rgba(0,0,0,.6); }
+.tray .inner { opacity: 0; transition: opacity .18s ease; padding-top: 7px; text-align: center; }
+.tray.open .inner { opacity: 1; transition-delay: .28s; }
+.tray .d-hint { font-family: 'Monocraft', monospace; font-size: 11px; color: rgba(255,255,255,.72); }
+/* apple centered with a potion-effect badge on each side */
+.tray .d-applerow { position: relative; width: 100%; height: 90px; margin-top: 2px; }
+.tray .d-apple { position: absolute; left: 50%; transform: translateX(-50%);
+  top: 3px; width: 84px; height: 84px; }
+.tray .d-apple video { width: 100%; height: 100%; image-rendering: auto; }
+.tray .ring { position: absolute; inset: 0; width: 84px; height: 84px; pointer-events: none; }
+.tray .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.tray .ring circle { fill: none; stroke: var(--gold); stroke-width: 5; stroke-linecap: round;
+  stroke-dasharray: 289; stroke-dashoffset: 289; }
+.tray.eating .d-apple { animation: chew .35s infinite; }
+.tray.eating .ring circle { transition: stroke-dashoffset 1.5s linear; stroke-dashoffset: 0; }
+@keyframes chew { 0%,100%{transform:translateX(-50%) scale(1)} 25%{transform:translateX(-50%) scale(.9)} 60%{transform:translateX(-50%) scale(1.03)} }
+/* potion-effect badge (clock / barrier), matches the app's HUD square */
+.tray .d-badge {
+  position: absolute; top: 12px; width: 40px; height: 50px;
+  background: rgba(13,13,26,.9); border: 1px solid rgba(130,130,130,.85); border-radius: 3px;
+  display: none; flex-direction: column; align-items: center; padding-top: 5px;
+  font-family: 'Monocraft', monospace; color: #fff; font-size: 11px;
+}
+.tray #dbadge { left: calc(50% - 92px); }
+.tray #dblkbadge { right: calc(50% - 92px); }
+.tray .d-badge.show { display: flex; }
+.tray .d-badge .bicon { font-size: 18px; line-height: 1; margin-bottom: 7px; }
+/* Minecraft options-style beveled button (matches app MCButton) */
+.tray .t-btn {
+  font-family: 'Monocraft', monospace; color: #fff; font-size: 12px;
+  background: #6b6b6b; border: 1px solid #000;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(0,0,0,.35);
+  text-shadow: 1px 1px rgba(0,0,0,.85);
+  display: inline-flex; align-items: center; justify-content: center;
+  user-select: none;
+}
+.tray .d-mode { width: 200px; height: 26px; margin: 8px auto 0; }
+.tray .d-timerow { display: none; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
+.tray .d-timerow.show { display: flex; }
+.tray .t-btn-sm { width: 26px; height: 22px; font-size: 15px; }
+.tray .d-time { font-family: 'Monocraft', monospace; color: #fff; font-size: 12px; width: 70px; }
+.tray .d-btnrow { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+.tray .t-btn-wide { width: 92px; height: 22px; font-size: 11px; }
+/* advancement toast under the notch */
+.mac .d-toast {
+  position: absolute; top: 6px; left: 50%; transform: translate(-50%, -18px);
+  width: 260px; z-index: 10; display: flex; align-items: center; gap: 12px;
+  background: #141414; border: 2px solid #6f6f6f; border-radius: 6px; padding: 10px 14px;
+  opacity: 0; transition: opacity .3s ease, transform .3s ease;
+}
+.mac .d-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.mac .d-toast .ta { width: 30px; height: 38px; flex: none;
+  background: url('apple_still.png') center/contain no-repeat; image-rendering: pixelated; }
+.mac .d-toast .t1 { font-family: 'Monocraft', monospace; font-size: 12px; color: #ffe14d; }
+.mac .d-toast .t2 { font-family: 'Monocraft', monospace; font-size: 10px; color: #fff; margin-top: 3px; }
+/* blocker: a browser window that goes from youtube.com to blocked */
+.mac .browser {
+  position: absolute; inset: 34px 34px 30px 34px; z-index: 9;
+  background: #fff; border-radius: 8px; overflow: hidden; display: none;
+  box-shadow: 0 18px 40px rgba(0,0,0,.55);
+}
+.mac .browser.show { display: block; }
+/* tab strip */
+.mac .browser .tabstrip { height: 30px; background: #d7d7dd; display: flex; align-items: flex-end; gap: 3px; padding: 4px 8px 0; }
+.mac .browser .btab {
+  height: 24px; padding: 0 14px; border-radius: 7px 7px 0 0; font-size: 11px; color: #444;
+  display: flex; align-items: center; gap: 6px; font-family: -apple-system, sans-serif;
+  background: #c2c2c8; transition: background .2s ease;
+}
+.mac .browser .btab b { color: #ff0000; }
+.mac .browser #tabNew { background: #fff; }
+.mac .browser.tube #tabNew { background: #c2c2c8; }
+.mac .browser.tube #tabYt { background: #fff; }
+.mac .browser .tabplus { color: #777; font-size: 16px; margin-left: 4px; align-self: center; }
+/* chrome */
+.mac .browser .chrome {
+  height: 34px; background: #fff; display: flex; align-items: center; gap: 12px; padding: 0 12px;
+  border-bottom: 1px solid #e6e6ea;
+}
+.mac .browser .bdots { display: flex; gap: 6px; }
+.mac .browser .bdots i { width: 11px; height: 11px; border-radius: 50%; background: #c8c8ce; }
+.mac .browser .bdots i:nth-child(1){background:#ff5f57} .mac .browser .bdots i:nth-child(2){background:#febc2e}
+.mac .browser .bdots i:nth-child(3){background:#28c840}
+.mac .browser .urlbar {
+  flex: 1; height: 24px; background: #f0f0f3; border-radius: 12px; font-size: 12px; color: #555;
+  display: flex; align-items: center; gap: 6px; padding: 0 14px; font-family: -apple-system, sans-serif;
+  transition: background .2s ease, color .2s ease;
+}
+.mac .browser .urlbar .lock { font-size: 10px; }
+.mac .browser.blockedstate .urlbar { background: #3a1414; color: #ff9a9a; }
+/* pages: which one shows depends on browser state */
+.mac .browser .page { position: absolute; inset: 64px 0 0 0; display: none; }
+.mac .browser.show .newtabpage { display: flex; }
+.mac .browser.show.tube .newtabpage { display: none; }
+.mac .browser.show.tube .ytpage { display: block; }
+.mac .browser.show.tube.blockedstate .ytpage { display: none; }
+.mac .browser.show.tube.blockedstate .blpage { display: flex; animation: blockin .3s ease-out; }
+@keyframes blockin { from { opacity: 0; } to { opacity: 1; } }
+/* new tab page */
+.mac .browser .newtabpage { background: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+.mac .browser .nt-search { width: 62%; max-width: 340px; height: 40px; border: 1px solid #e2e2e6; border-radius: 20px;
+  display: flex; align-items: center; padding: 0 20px; color: #999; font-size: 13px;
+  font-family: -apple-system, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.mac .browser .nt-tiles { display: flex; gap: 18px; }
+.mac .browser .nt-tile { width: 54px; height: 54px; border-radius: 14px; background: #eee;
+  display: flex; align-items: center; justify-content: center; }
+.mac .browser .nt-tile.ytt { background: #fff; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.mac .browser .nt-tile.ytt b { color: #ff0000; font-size: 24px; }
+/* youtube mock */
+.mac .browser .ytpage { background: #0f0f0f; padding: 14px; }
+.mac .browser .yt-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.mac .browser .yt-logo { color: #fff; font-family: -apple-system, sans-serif; font-weight: 700; font-size: 16px; }
+.mac .browser .yt-logo b { color: #ff0000; }
+.mac .browser .yt-search { flex: 1; max-width: 260px; height: 22px; background: #222; border: 1px solid #333; border-radius: 12px; }
+.mac .browser .yt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.mac .browser .yt-card { height: 74px; border-radius: 8px;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a); position: relative; }
+.mac .browser .yt-card::after { content:""; position:absolute; left:8px; bottom:8px; right:40px; height:8px;
+  background:#333; border-radius:4px; box-shadow:0 12px 0 -2px #2a2a2a; }
+/* connection lost dirt page */
+.mac .browser .blpage { background: url('dirt.png'); background-size: 72px; image-rendering: pixelated;
+  flex-direction: column; align-items: center; justify-content: center; font-family: 'Monocraft', monospace; }
+.mac .browser .bl-cl { color: #a8a8a8; font-size: 16px; text-shadow: 2px 2px #000; }
+.mac .browser .bl-dc { color: #fff; font-size: 24px; text-shadow: 2px 2px #000; margin: 8px 0 26px; }
+.mac .browser .bl-btn { color: #fff; font-size: 14px; background: #6f6f6f; border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #a8a8a8, inset -2px -2px 0 #4c4c4c; padding: 8px 40px; text-shadow: 2px 2px #3f3f3f; }
+/* pomodoro time-skip blur overlay */
+.mac .timeskip { position: absolute; inset: 0; z-index: 11; display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); background: rgba(10,10,14,.35);
+  color: #fff; font-family: 'Monocraft', monospace; font-size: 15px; text-shadow: 1px 1px #000; }
+.mac .timeskip.show { display: flex; animation: blockin .35s ease; }
+/* fullscreen flash + particles */
+.mac .flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,210,80,.5), transparent 60%);
+  opacity: 0; z-index: 6; pointer-events: none; }
+.mac .flash.go { animation: flash .8s ease-out; }
+@keyframes flash { 0%{opacity:1} 100%{opacity:0} }
+.mac .vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0;
+  box-shadow: inset 0 0 120px 40px rgba(150,60,220,.5); }
+.mac .vignette.go { animation: vig 2.4s ease-out; }
+@keyframes vig { 0%{opacity:0} 20%{opacity:.9} 100%{opacity:0} }
+.mac .fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+.p { position: absolute; width: 10px; height: 10px; image-rendering: pixelated; bottom: -14px; }
+.p.go { animation: rise linear forwards; }
+@keyframes rise { to { transform: translateY(-420px) rotate(360deg); opacity: 0; } }
+/* fake cursor */
+.mac .cursor { position: absolute; z-index: 8; width: 20px; height: 20px;
+  transition: left .8s cubic-bezier(.4,0,.2,1), top .8s cubic-bezier(.4,0,.2,1), transform .1s ease;
+  left: 78%; top: 74%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+.mac .cursor.press { transform: scale(.82); }
+.mac .caption {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  font-size: 13px; color: #cfcfd6; background: rgba(0,0,0,.5); padding: 6px 16px;
+  border-radius: 20px; z-index: 9; transition: opacity .3s ease; white-space: nowrap;
+}
+
+/* ---- features ---- */
+.section-head { text-align: center; margin: 84px 0 34px; }
+.section-head h2 { font-size: 26px; color: #fff; }
+.section-head p { color: var(--muted); margin-top: 8px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.card {
+  background: var(--panel); border: 1px solid var(--panel-line);
+  border-radius: 16px; padding: 24px 22px; transition: border-color .15s ease, transform .15s ease;
+}
+.card:hover { border-color: #38383f; transform: translateY(-3px); }
+.card .ico {
+  width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 22px; margin-bottom: 14px; background: #201d12; image-rendering: pixelated;
+}
+.card h3 { font-size: 17px; margin-bottom: 8px; color: #fff; }
+.card p { font-size: 14px; color: var(--muted); }
+.card .tag { color: var(--gold); font-family: 'Monocraft', monospace; font-size: 12px; }
+
+/* ---- how it works ---- */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
+.step { text-align: center; padding: 8px; }
+.step .n {
+  width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 10px;
+  display: grid; place-items: center; background: #201d12; color: var(--gold);
+  font-family: 'Monocraft', monospace; font-size: 14px;
+}
+.step p { font-size: 14px; color: var(--muted); }
+.step b { color: var(--text); }
+
+/* ---- disconnect demo ---- */
+.demo {
+  margin-top: 34px; border: 1px solid var(--panel-line); border-radius: 16px; overflow: hidden;
+  background: #050505; text-align: center; padding: 48px 20px;
+}
+.demo .cl { color: #a0a0a0; font-family: 'Monocraft', monospace; font-size: 15px; }
+.demo .dc { color: #fff; font-family: 'Monocraft', monospace; font-size: 22px; margin: 8px 0 22px; }
+.demo .fakebtn {
+  display: inline-block; font-family: 'Monocraft', monospace; font-size: 14px; color: #fff;
+  background: #6f6f6f; border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #a8a8a8, inset -2px -2px 0 #4c4c4c; padding: 8px 34px;
+}
+.demo .cap { color: #55555f; font-size: 12px; margin-top: 20px; }
+
+footer { text-align: center; color: #55555f; font-size: 12px; padding: 60px 0 50px; line-height: 1.8; }
+footer a { color: #77777f; }
+@media (max-width: 720px) {
+  .cards, .steps { grid-template-columns: 1fr; }
+  h1.title { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+<div class="hero-flash" id="heroFlash"></div>
+<div class="hero-fx" id="heroFx"></div>
+<div class="topbar"><div class="notch"></div></div>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="apple-wrap" id="heroApple" role="button" tabindex="0"
+         aria-label="Press and hold to eat the golden apple">
+      <video class="apple" autoplay loop muted playsinline poster="poster.png" draggable="false">
+        <source src="apple.webm" type="video/webm">
+      </video>
+      <div class="apple-ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg></div>
+    </div>
+    <div class="apple-hint mono" id="heroHint">press &amp; hold to eat</div>
+    <h1 class="title mono">NOTCH APPLE</h1>
+    <p class="lede">A Minecraft golden apple lives in your Mac's notch.
+      <b>Hover to open it, press and hold to eat it</b> — for focus, for blocking
+      distractions, or just for the particles.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="NotchApple.zip" download>&#8681;&nbsp; Download for macOS</a>
+      <a class="btn btn-ghost" href="#features">See what it does</a>
+    </div>
+    <div class="req">Requires a MacBook with a notch &middot; macOS 13+ &middot; Apple Silicon &middot; free &amp; open source</div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>See it in action</h2>
+      <p>Hover, hold, eat. Here's the whole loop.</p>
+    </div>
+    <div class="mode-tabs" id="modetabs">
+      <div class="mode-tab" data-mode="Default"><span>&#10022;</span> Default</div>
+      <div class="mode-tab" data-mode="Pomodoro"><span>&#9203;</span> Pomodoro</div>
+      <div class="mode-tab" data-mode="Blocker"><span>&#9940;</span> Blocker</div>
+    </div>
+    <div class="demo-stage">
+      <div class="mac" id="mac">
+        <div class="menubar">
+          <span class="mono">&#63743;</span><span>Finder</span><span>File</span><span>Edit</span>
+          <span class="spacer"></span><span>100%</span><span class="mono">&#9201;</span>
+        </div>
+        <div class="vignette" id="vignette"></div>
+        <div class="tray" id="tray">
+          <div class="inner">
+            <div class="d-hint" id="dhint">hold to eat</div>
+            <div class="d-applerow">
+              <div class="d-badge" id="dbadge">
+                <span class="bicon" style="color:#ffd23c">&#9201;</span>
+                <span id="dbadgetime">25:00</span>
+              </div>
+              <div class="d-apple" id="dapple">
+                <video autoplay loop muted playsinline poster="poster.png">
+                  <source src="apple.webm" type="video/webm"></video>
+                <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg></div>
+              </div>
+              <div class="d-badge" id="dblkbadge">
+                <span class="bicon" style="color:#ff5b5b">&#9940;</span>
+                <span>&#8734;</span>
+              </div>
+            </div>
+            <div class="t-btn d-mode" id="dmode">Mode: Default</div>
+            <div class="d-timerow" id="dtimerow">
+              <div class="t-btn t-btn-sm">&#8722;</div>
+              <div class="d-time" id="dtime">25 min</div>
+              <div class="t-btn t-btn-sm">+</div>
+            </div>
+            <div class="d-btnrow">
+              <div class="t-btn t-btn-wide">Settings</div>
+              <div class="t-btn t-btn-wide">Info</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-toast" id="dtoast">
+          <div class="ta"></div>
+          <div><div class="t1">Advancement Made!</div><div class="t2">Pomodoro complete</div></div>
+        </div>
+        <div class="browser" id="browser">
+          <div class="tabstrip">
+            <div class="btab" id="tabNew">&#127760; New Tab</div>
+            <div class="btab" id="tabYt"><b>&#9654;</b> YouTube</div>
+            <span class="tabplus">+</span>
+          </div>
+          <div class="chrome">
+            <div class="bdots"><i></i><i></i><i></i></div>
+            <div class="urlbar" id="urlbar">Search or type a URL</div>
+          </div>
+          <div class="page newtabpage" id="newtabpage">
+            <div class="nt-search">&#128269;&nbsp; Search the web</div>
+            <div class="nt-tiles">
+              <div class="nt-tile ytt"><b>&#9654;</b></div>
+              <div class="nt-tile"></div><div class="nt-tile"></div><div class="nt-tile"></div>
+            </div>
+          </div>
+          <div class="page ytpage" id="ytpage">
+            <div class="yt-top"><span class="yt-logo"><b>&#9654;</b> YouTube</span><div class="yt-search"></div></div>
+            <div class="yt-grid">
+              <div class="yt-card"></div><div class="yt-card"></div>
+              <div class="yt-card"></div><div class="yt-card"></div>
+            </div>
+          </div>
+          <div class="page blpage" id="blpage">
+            <div class="bl-cl">Connection Lost</div>
+            <div class="bl-dc">Disconnected</div>
+            <div class="bl-btn">Back to server list</div>
+          </div>
+        </div>
+        <div class="timeskip" id="timeskip"><span id="timeskiptext">25 minutes later…</span></div>
+        <div class="flash" id="flash"></div>
+        <div class="fx" id="fx"></div>
+        <svg class="cursor" id="cursor" viewBox="0 0 24 24" fill="#fff" stroke="#000" stroke-width="1.2">
+          <path d="M4 2 L4 20 L9 15 L12 22 L15 20 L12 13 L19 13 Z"/>
+        </svg>
+        <div class="caption" id="caption">Hover the notch</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="section-head">
+      <h2>One apple, three effects</h2>
+      <p>Switch modes right in the tray. The apple remembers your pick.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="ico">&#10022;</div>
+        <div class="tag">// default</div>
+        <h3>Potion Particles</h3>
+        <p>Eat the apple and Minecraft potion swirls rise across your whole screen,
+          with a golden flash. Zero productivity value. Maximum joy.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#9203;</div>
+        <div class="tag">// focus</div>
+        <h3>Pomodoro</h3>
+        <p>Eat to start a focus timer. A potion-effect badge counts down in the notch.
+          When it ends: the achievement chime and an "Advancement Made!" toast.</p>
+      </div>
+      <div class="card">
+        <div class="ico">&#9940;</div>
+        <div class="tag">// discipline</div>
+        <h3>Distraction Blocker</h3>
+        <p>Cold turkey for social media. Open a blocked site and you get Minecraft's
+          "Connection Lost" screen instead. Eat again to reconnect.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>How it works</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n mono">1</div><p><b>Hover the notch.</b> The tray slides down and the apple appears.</p></div>
+      <div class="step"><div class="n mono">2</div><p><b>Choose the effect.</b> Pick Default, Pomodoro, or Blocker right in the tray.</p></div>
+      <div class="step"><div class="n mono">3</div><p><b>Press and hold.</b> A ring fills as you eat — then your chosen effect fires.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Blocked, the Minecraft way</h2>
+      <p>What you see when you try to open a site on your block list.</p>
+    </div>
+    <div class="demo">
+      <div class="cl">Connection Lost</div>
+      <div class="dc">Disconnected</div>
+      <div class="fakebtn">Back to server list</div>
+      <div class="cap">Served locally from port 25565. No data leaves your Mac.</div>
+    </div>
+  </section>
+
+  <footer>
+    Notch Apple is a fan-made toy, not affiliated with or approved by Mojang, Microsoft, or Apple.<br>
+    Golden-apple footage &amp; sound effects belong to their respective owners.
+    Monocraft font by <a href="https://github.com/IdreesInc/Monocraft">IdreesInc</a> (OFL).
+  </footer>
+</div>
+
+<script>
+  const click = new Audio('click.m4a');
+  document.querySelectorAll('.btn, .fakebtn').forEach(b =>
+    b.addEventListener('mousedown', () => { click.currentTime = 0; click.volume = 0.4; click.play().catch(()=>{}); }));
+
+  /* ---- interactive hero apple: press & hold to eat, then potion particles ---- */
+  (function () {
+    const wrap = document.getElementById('heroApple');
+    const ring = wrap.querySelector('.apple-ring circle');
+    const hint = document.getElementById('heroHint');
+    const flash = document.getElementById('heroFlash');
+    const fx = document.getElementById('heroFx');
+    const colors = ['#c39bff', '#ff8fd0', '#ffd23c', '#ffffff', '#a0f0ff'];
+
+    const HOLD = 1600;          // ms of holding to fully eat the apple
+    const CIRC = 2 * Math.PI * 46;
+    ring.style.strokeDasharray = CIRC;
+    ring.style.strokeDashoffset = CIRC;
+
+    const eatSound = new Audio('eat.m4a'); eatSound.loop = true; eatSound.volume = 0.6;
+    const eatenSound = new Audio('eaten.m4a'); eatenSound.volume = 0.75;
+
+    let holding = false, raf = 0, startT = 0, busy = false;
+
+    function burst() {
+      const n = 64;
+      for (let i = 0; i < n; i++) {
+        const p = document.createElement('div');
+        p.className = 'hp';
+        p.style.background = colors[i % colors.length];
+        p.style.left = (Math.random() * 100) + 'vw';
+        const dur = 2.0 + Math.random() * 1.8;
+        const size = 7 + Math.random() * 10;
+        p.style.width = p.style.height = size + 'px';
+        p.style.animationDuration = dur + 's';
+        p.style.animationDelay = (Math.random() * 0.5) + 's';
+        fx.appendChild(p);
+        requestAnimationFrame(() => p.classList.add('go'));
+        setTimeout(() => p.remove(), (dur + 0.7) * 1000);
+      }
+      flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    }
+
+    function tick() {
+      if (!holding) return;
+      const prog = Math.min(1, (performance.now() - startT) / HOLD);
+      ring.style.strokeDashoffset = CIRC * (1 - prog);
+      if (prog >= 1) { finish(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (busy || holding) return;
+      holding = true; startT = performance.now();
+      ring.style.transition = '';
+      wrap.classList.remove('respawn');
+      wrap.classList.add('eating');
+      hint.textContent = 'keep holding…';
+      eatSound.currentTime = 0; eatSound.play().catch(() => {});
+      tick();
+    }
+
+    function finish() {
+      holding = false; busy = true;
+      cancelAnimationFrame(raf);
+      eatSound.pause();
+      eatenSound.currentTime = 0; eatenSound.play().catch(() => {});
+      wrap.classList.remove('eating');
+      wrap.classList.add('eaten');
+      hint.textContent = 'nom. 🍎✨';
+      burst();
+      setTimeout(respawn, 2600);
+    }
+
+    function cancel() {
+      if (!holding) return;
+      holding = false;
+      cancelAnimationFrame(raf);
+      eatSound.pause();
+      wrap.classList.remove('eating');
+      ring.style.transition = 'stroke-dashoffset .3s ease';
+      ring.style.strokeDashoffset = CIRC;
+      hint.textContent = 'press & hold to eat';
+    }
+
+    function respawn() {
+      busy = false;
+      ring.style.transition = '';
+      ring.style.strokeDashoffset = CIRC;
+      wrap.classList.remove('eaten');
+      wrap.classList.add('respawn');
+      hint.textContent = 'press & hold to eat';
+    }
+
+    wrap.addEventListener('pointerdown', (e) => { e.preventDefault(); start(); });
+    wrap.addEventListener('pointerup', cancel);
+    wrap.addEventListener('pointercancel', cancel);
+    wrap.addEventListener('pointerleave', cancel);
+    // keyboard: hold Space / Enter
+    wrap.addEventListener('keydown', (e) => {
+      if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); start(); }
+    });
+    wrap.addEventListener('keyup', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') cancel();
+    });
+  })();
+
+  /* ---- animated demo timeline ---- */
+  (function () {
+    const mac = document.getElementById('mac');
+    const tray = document.getElementById('tray');
+    const cursor = document.getElementById('cursor');
+    const caption = document.getElementById('caption');
+    const flash = document.getElementById('flash');
+    const vignette = document.getElementById('vignette');
+    const fx = document.getElementById('fx');
+    const dmode = document.getElementById('dmode');
+    const dhint = document.getElementById('dhint');
+    const dbadge = document.getElementById('dbadge');
+    const dblkbadge = document.getElementById('dblkbadge');
+    const dbadgetime = document.getElementById('dbadgetime');
+    const dtimerow = document.getElementById('dtimerow');
+    const dtime = document.getElementById('dtime');
+    const dapple = document.getElementById('dapple');
+    const plusBtn = document.querySelectorAll('#dtimerow .t-btn')[1];
+    const dtoast = document.getElementById('dtoast');
+    const browser = document.getElementById('browser');
+    const urlbar = document.getElementById('urlbar');
+    const tabYt = document.getElementById('tabYt');
+    const timeskip = document.getElementById('timeskip');
+    const timeskiptext = document.getElementById('timeskiptext');
+    const hints = { Default: 'hold to eat', Pomodoro: 'hold to focus', Blocker: 'hold to block' };
+    const tabs = Array.from(document.querySelectorAll('.mode-tab'));
+    const colors = ['#c39bff', '#ff8fd0', '#ffd23c', '#ffffff'];
+
+    // Cancellable scheduler so tab clicks can jump the playback.
+    let timers = [];
+    function at(delay, fn) { timers.push(setTimeout(fn, delay)); }
+    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+    function say(t) { caption.style.opacity = 0; at(300, () => { caption.textContent = t; caption.style.opacity = 1; }); }
+    function moveCursor(left, top) { cursor.style.left = left; cursor.style.top = top; }
+    function moveCursorToEl(el) {
+      const m = mac.getBoundingClientRect(), r = el.getBoundingClientRect();
+      moveCursor(((r.left + r.width / 2 - m.left) / m.width * 100) + '%',
+                 ((r.top + r.height / 2 - m.top) / m.height * 100) + '%');
+    }
+    function clickPulse() { cursor.classList.add('press'); at(150, () => cursor.classList.remove('press')); }
+
+    // The screen-wide potion effect the app fires on EVERY eat.
+    function firePotion() {
+      flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+      vignette.classList.remove('go'); void vignette.offsetWidth; vignette.classList.add('go');
+      burst();
+    }
+    function burst() {
+      for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.className = 'p';
+        p.style.background = colors[i % colors.length];
+        p.style.left = (5 + Math.random() * 90) + '%';
+        const dur = 1.8 + Math.random() * 1.6;
+        const size = 6 + Math.random() * 8;
+        p.style.width = p.style.height = size + 'px';
+        p.style.animationDuration = dur + 's';
+        p.style.animationDelay = (Math.random() * 0.5) + 's';
+        fx.appendChild(p);
+        requestAnimationFrame(() => p.classList.add('go'));
+        // untracked so particles self-clean even if the timeline is cancelled
+        setTimeout(() => p.remove(), (dur + 0.6) * 1000);
+      }
+    }
+
+    const modes = ['Default', 'Pomodoro', 'Blocker'];
+    let mi = 0;
+    let pomoMins = 25;
+
+    function clearEffects() {
+      flash.classList.remove('go'); vignette.classList.remove('go');
+      dbadge.classList.remove('show'); dblkbadge.classList.remove('show');
+      dtoast.classList.remove('show'); dtimerow.classList.remove('show');
+      timeskip.classList.remove('show');
+      browser.classList.remove('show', 'tube', 'blockedstate');
+      urlbar.innerHTML = 'Search or type a URL';
+    }
+
+    function highlightTab(mode) {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    }
+
+    // Set the already-open tray to a mode IN PLACE (no close / reopen), the
+    // way clicking the app's Mode button would.
+    function switchTray(mode) {
+      clearEffects();
+      dmode.textContent = 'Mode: ' + mode;
+      dhint.textContent = hints[mode];
+      dtime.textContent = '25 min'; pomoMins = 25;
+      if (mode === 'Pomodoro') dtimerow.classList.add('show');
+      highlightTab(mode);
+    }
+
+    // Interaction + effect for one mode (tray already open and set to it).
+    function demoSteps(mode) {
+      const s = [];
+      if (mode === 'Pomodoro') {
+        s.push([850, () => { moveCursorToEl(plusBtn); say('Set your focus time'); }]);
+        s.push([600, () => { clickPulse(); dtime.textContent = '30 min'; pomoMins = 30; }]);
+        s.push([500, () => { clickPulse(); dtime.textContent = '35 min'; pomoMins = 35; }]);
+      }
+      s.push([850, () => { moveCursorToEl(dapple); say('Press and hold to eat'); }]);
+      s.push([500, () => { cursor.classList.add('press'); tray.classList.add('eating'); }]);
+      s.push([1600, () => { cursor.classList.remove('press'); tray.classList.remove('eating'); firePotion(); }]);
+
+      if (mode === 'Default') {
+        s.push([0, () => say('Potion particles across your screen!')]);
+        s.push([1900, () => {}]);
+      } else if (mode === 'Pomodoro') {
+        s.push([0, () => { dbadge.classList.add('show'); dbadgetime.textContent = pomoMins + ':00';
+                           say('Focus timer started'); }]);
+        s.push([1100, () => { timeskiptext.textContent = pomoMins + ' minutes later…';
+                              timeskip.classList.add('show'); say('some time passes…'); }]);
+        s.push([2000, () => { timeskip.classList.remove('show'); dbadgetime.textContent = '00:01'; }]);
+        s.push([700, () => { dtoast.classList.add('show'); firePotion(); say('Advancement Made!'); }]);
+        s.push([2200, () => { dtoast.classList.remove('show'); dbadge.classList.remove('show'); }]);
+      } else { // Blocker
+        s.push([0, () => { dblkbadge.classList.add('show'); say('Distraction blocker armed'); }]);
+        s.push([1000, () => { browser.classList.add('show'); say('You get back to browsing…'); }]);
+        s.push([1200, () => { moveCursorToEl(tabYt); say('…and switch to YouTube'); }]);
+        s.push([850, () => { clickPulse(); browser.classList.add('tube');
+                             urlbar.innerHTML = '<span class="lock">&#128274;</span> youtube.com'; }]);
+        s.push([1500, () => { browser.classList.add('blockedstate');
+                              urlbar.innerHTML = '<span class="lock">&#128274;</span> 127.0.0.1:25565';
+                              firePotion(); say('Blocked → Connection Lost'); }]);
+        s.push([2400, () => { browser.classList.remove('show', 'tube', 'blockedstate'); say('Eat again to reconnect'); }]);
+      }
+      return s;
+    }
+
+    // Move to the tray's Mode button, click it, and switch to the next mode.
+    function toggleSteps() {
+      return [
+        [1200, () => { moveCursorToEl(dmode); say('One click on Mode switches it →'); }],
+        [800,  () => { clickPulse(); mi = (mi + 1) % modes.length; switchTray(modes[mi]); }],
+        [650,  () => {}],
+      ];
+    }
+
+    function runOne() {
+      clearTimers();
+      const mode = modes[mi];
+      const steps = [];
+      // Open the tray only if it isn't already open (very first run / a jump).
+      if (!tray.classList.contains('open')) {
+        steps.push([700, () => { moveCursor('50%', '4%'); say('Hover the notch'); }]);
+        steps.push([850, () => tray.classList.add('open')]);
+        steps.push([350, () => switchTray(mode)]);
+      }
+      demoSteps(mode).forEach(x => steps.push(x));
+      toggleSteps().forEach(x => steps.push(x));
+
+      let t = 0;
+      steps.forEach(([d, fn]) => { t += d; at(t, fn); });
+      at(t + 100, runOne); // continue with the mode the toggle just switched to
+    }
+
+    // Clicking a mode tab jumps straight to that mode (switches in place if open).
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+      const idx = modes.indexOf(tab.dataset.mode);
+      if (idx < 0) return;
+      clearTimers();
+      mi = idx;
+      cursor.classList.remove('press');
+      if (tray.classList.contains('open')) switchTray(modes[mi]); else highlightTab(modes[mi]);
+      runOne();
+    }));
+
+    // Start when the demo scrolls into view (and only once).
+    let started = false;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !started) { started = true; runOne(); io.disconnect(); }
+    }, { threshold: 0.4 });
+    io.observe(mac);
+  })();
+</script>
+</body>
+</html>
